@@ -35,7 +35,7 @@ document.getElementById("fill4").addEventListener("click", () => playFill("F4", 
 function playLoop(loopFile, buttonId) {
   if (isPlayingFill) return; // Don't change loop while fill is playing
   stopAllAudio();
-  currentLoop = new Audio(`/rhythm-sets/${currentSet}/${loopFile}.mp3`);
+  currentLoop = new Audio(`/rhythm-sets/${currentSet}/${loopFile}.wav`);
   currentLoop.loop = true;
   currentLoop.play();
   highlightButton(buttonId);
@@ -44,7 +44,7 @@ function playLoop(loopFile, buttonId) {
 function playFill(fillFile, buttonId) {
   if (isPlayingFill) return; // Don't play another fill if one is already playing
   isPlayingFill = true;
-  currentFill = new Audio(`/rhythm-sets/${currentSet}/${fillFile}.mp3`);
+  currentFill = new Audio(`/rhythm-sets/${currentSet}/${fillFile}.wav`);
   currentFill.play();
   highlightButton(buttonId);
   currentFill.onended = () => {

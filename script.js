@@ -1,15 +1,10 @@
-let currentSet = "set1";
-let currentLoop = null;
-let currentFill = null;
-let isPlayingFill = false;
-let selectedButton = null;
-let audioContext = null; // Web Audio API for precise timing
-
-// Preloaded audio buffers
-const audioBuffers = {
-  loops: {},
-  fills: {},
-};
+let currentSet = "set1"; // Default rhythm set
+let currentLoop = null; // Currently playing loop
+let currentFill = null; // Currently playing fill
+let isPlayingFill = false; // Flag to track if a fill is playing
+let selectedButton = null; // Currently selected button
+let audioContext = null; // Web Audio API context
+let audioBuffers = {}; // Preloaded audio buffers
 
 // Load rhythm sets into the dropdown
 const rhythmSetDropdown = document.getElementById("rhythm-set");
@@ -20,18 +15,14 @@ rhythmSets.forEach(set => {
   rhythmSetDropdown.appendChild(option);
 });
 
-// Change rhythm set
-rhythmSetDropdown.addEventListener("change", async (event) => {
-  currentSet = event.target.value;
-  stopAllAudio();
-  resetButtons();
-  await preloadAudioFiles(); // Preload audio files for the selected set
-});
+// Initialize Web Audio API
+function initAudioContext() {
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
 
-// Preload audio files
+// Preload audio files for the selected rhythm set
 async function preloadAudioFiles() {
-  audioBuffers.loops = {};
-  audioBuffers.fills = {};
+  audioBuffers = { loops: {}, fills: {} }; // Reset buffers
 
   const loadAudio = async (type, file) => {
     const response = await fetch(`./rhythm-sets/${currentSet}/${file}.wav`);
@@ -53,27 +44,25 @@ async function preloadAudioFiles() {
   audioBuffers.fills.F4 = await loadAudio("fill", "F4");
 }
 
-// Initialize Web Audio API
-function initAudioContext() {
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-
-// Play loop
+// Play a loop
 function playLoop(loopFile, buttonId) {
   if (isPlayingFill) return; // Don't change loop while fill is playing
-  stopAllAudio();
+  stopAllAudio(); // Stop any currently playing audio
+
   const source = audioContext.createBufferSource();
-  source.buffer = audioBuffers.loops[loopFile];
-  source.loop = true;
-  source.connect(audioContext.destination);
-  source.start(0);
-  currentLoop = source;
-  highlightButton(buttonId);
+  source.buffer = audioBuffers.loops[loopFile]; // Set the loop buffer
+  source.loop = true; // Enable looping
+  source.connect(audioContext.destination); // Connect to output
+  source.start(0); // Start playback immediately
+  currentLoop = source; // Store the current loop
+
+  highlightButton(buttonId); // Highlight the selected button
 }
 
-// Schedule fill
+// Schedule a fill to play at the end of the current loop cycle
 function scheduleFill(fillFile, buttonId) {
   if (isPlayingFill) return; // Don't schedule another fill if one is already scheduled
+
   const loopDuration = currentLoop.buffer.duration; // Duration of the current loop
   const currentTime = audioContext.currentTime; // Current playback time
   const loopStartTime = currentLoop.startTime || 0; // Time when the loop started
@@ -83,62 +72,74 @@ function scheduleFill(fillFile, buttonId) {
   // Schedule the fill to play at the end of the current loop cycle
   setTimeout(() => {
     playFill(fillFile, buttonId);
-  }, timeRemaining * 1000);
+  }, timeRemaining * 1000); // Convert to milliseconds
 }
 
-// Play fill
+// Play a fill
 function playFill(fillFile, buttonId) {
-  isPlayingFill = true;
+  isPlayingFill = true; // Set the fill flag
+
   const source = audioContext.createBufferSource();
-  source.buffer = audioBuffers.fills[fillFile];
-  source.connect(audioContext.destination);
-  source.start(0);
-  currentFill = source;
-  highlightButton(buttonId);
+  source.buffer = audioBuffers.fills[fillFile]; // Set the fill buffer
+  source.connect(audioContext.destination); // Connect to output
+  source.start(0); // Start playback immediately
+  currentFill = source; // Store the current fill
+
+  highlightButton(buttonId); // Highlight the selected button
+
+  // When the fill ends, resume the loop
   source.onended = () => {
-    isPlayingFill = false;
+    isPlayingFill = false; // Reset the fill flag
     if (currentLoop) {
-      currentLoop.start(0); // Resume the loop immediately after the fill ends
+      currentLoop.start(0); // Resume the loop immediately
     }
-    resetButtons();
+    resetButtons(); // Reset button highlights
   };
 }
 
 // Stop all audio
 function stopAllAudio() {
   if (currentLoop) {
-    currentLoop.stop();
-    currentLoop.disconnect();
-    currentLoop = null;
+    currentLoop.stop(); // Stop the loop
+    currentLoop.disconnect(); // Disconnect from output
+    currentLoop = null; // Clear the loop reference
   }
   if (currentFill) {
-    currentFill.stop();
-    currentFill.disconnect();
-    currentFill = null;
+    currentFill.stop(); // Stop the fill
+    currentFill.disconnect(); // Disconnect from output
+    currentFill = null; // Clear the fill reference
   }
 }
 
-// Highlight selected button
+// Highlight the selected button
 function highlightButton(buttonId) {
   if (selectedButton) {
-    selectedButton.classList.remove("selected");
+    selectedButton.classList.remove("selected"); // Remove highlight from the previous button
   }
-  selectedButton = document.getElementById(buttonId);
-  selectedButton.classList.add("selected");
+  selectedButton = document.getElementById(buttonId); // Get the new button
+  selectedButton.classList.add("selected"); // Add highlight to the new button
 }
 
-// Reset buttons
+// Reset button highlights
 function resetButtons() {
   if (selectedButton) {
-    selectedButton.classList.remove("selected");
-    selectedButton = null;
+    selectedButton.classList.remove("selected"); // Remove highlight
+    selectedButton = null; // Clear the button reference
   }
 }
 
-// Initialize audio context when the page loads
-window.addEventListener("load", () => {
-  initAudioContext();
-  preloadAudioFiles(); // Preload audio files for the default set
+// Initialize audio context and preload audio files when the page loads
+window.addEventListener("load", async () => {
+  initAudioContext(); // Initialize Web Audio API
+  await preloadAudioFiles(); // Preload audio files for the default set
+});
+
+// Change rhythm set
+rhythmSetDropdown.addEventListener("change", async (event) => {
+  currentSet = event.target.value; // Update the current set
+  stopAllAudio(); // Stop any currently playing audio
+  resetButtons(); // Reset button highlights
+  await preloadAudioFiles(); // Preload audio files for the new set
 });
 
 // Loop buttons

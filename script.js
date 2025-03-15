@@ -27,10 +27,10 @@ document.getElementById("loop3").addEventListener("click", () => playLoop("L3", 
 document.getElementById("loop4").addEventListener("click", () => playLoop("L4", "loop4"));
 
 // Fill buttons
-document.getElementById("fill1").addEventListener("click", () => playFill("F1", "fill1"));
-document.getElementById("fill2").addEventListener("click", () => playFill("F2", "fill2"));
-document.getElementById("fill3").addEventListener("click", () => playFill("F3", "fill3"));
-document.getElementById("fill4").addEventListener("click", () => playFill("F4", "fill4"));
+document.getElementById("fill1").addEventListener("click", () => scheduleFill("F1", "fill1"));
+document.getElementById("fill2").addEventListener("click", () => scheduleFill("F2", "fill2"));
+document.getElementById("fill3").addEventListener("click", () => scheduleFill("F3", "fill3"));
+document.getElementById("fill4").addEventListener("click", () => scheduleFill("F4", "fill4"));
 
 function playLoop(loopFile, buttonId) {
   if (isPlayingFill) return; // Don't change loop while fill is playing
@@ -41,8 +41,18 @@ function playLoop(loopFile, buttonId) {
   highlightButton(buttonId);
 }
 
+function scheduleFill(fillFile, buttonId) {
+  if (isPlayingFill) return; // Don't schedule another fill if one is already scheduled
+  const loopDuration = getAudioDuration(currentLoop); // Get the duration of the current loop
+  const currentTime = currentLoop.currentTime; // Get the current playback time
+  const timeRemaining = loopDuration - (currentTime % loopDuration); // Time until the end of the current loop cycle
+
+  setTimeout(() => {
+    playFill(fillFile, buttonId);
+  }, timeRemaining * 1000); // Schedule the fill to play at the end of the current loop cycle
+}
+
 function playFill(fillFile, buttonId) {
-  if (isPlayingFill) return; // Don't play another fill if one is already playing
   isPlayingFill = true;
   currentFill = new Audio(`/rhythm-sets/${currentSet}/${fillFile}.wav`);
   currentFill.play();
@@ -50,7 +60,7 @@ function playFill(fillFile, buttonId) {
   currentFill.onended = () => {
     isPlayingFill = false;
     if (currentLoop) {
-      currentLoop.play();
+      currentLoop.play(); // Resume the loop after the fill finishes
     }
     resetButtons();
   };
@@ -80,4 +90,8 @@ function resetButtons() {
     selectedButton.classList.remove("selected");
     selectedButton = null;
   }
+}
+
+function getAudioDuration(audio) {
+  return audio.duration;
 }

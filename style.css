@@ -60,11 +60,13 @@ button {
   border-radius: 15px;
   background-color: #333;
   color: #fff;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 button:hover {
   background-color: #444;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
 }
 
 /* Selected Button Animation */
@@ -76,6 +78,12 @@ button.selected {
   0% { background-color: #333; }
   50% { background-color: #00ff00; }
   100% { background-color: #333; }
+}
+
+/* Fluid Touch Effects */
+button:active {
+  transform: scale(0.95);
+  background-color: #00ff00;
 }
 
 /* Footer */
